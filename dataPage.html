@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Climate Data</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f3f3;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        section {
+            margin: 20px;
+            padding: 20px;
+            background-color: rgb(250, 251, 254);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(119, 16, 209, 0.1);
+            flex: 1;
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            margin-top: auto;
+        }
+
+        #crop-chart,
+        #rainfall-chart {
+            max-width: 800px;
+            height: 400px !important;
+            /* Fix height */
+            margin: 20px auto;
+        }
+
+        #crop-list-container,
+        #data-summary {
+            overflow: hidden;
+        }
+
+
+
+
+
+        .button {
+            background-color: #4CAF50;
+            color: rgb(255, 250, 250);
+            border: none;
+            padding: 15px 30px;
+            text-align: center;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .button:hover {
+            background-color: #45a049;
+            transform: translateY(-3px);
+
+        }
+
+        #pagination button {
+            margin: 3px;
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            cursor: pointer;
+        }
+
+        #pagination button.active {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            border-color: #007bff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Climate Data for Selected Region</h1>
+    </header>
+
+    <section>
+
+
+        <header>
+            <button class="button" onclick="showClimateData()">Climate Data</button>
+            <button class="button" onclick="showCropData()">Crop Predictions</button>
+        </header>
+
+
+
+
+        <div id="data-summary" style="display: none;">
+            <h3>Climate Summary</h3>
+            <p><strong>State:</strong> <span id="summary-state">N/A</span></p>
+            <p><strong>District:</strong> <span id="summary-district">N/A</span></p>
+            <p><strong>Temperature:</strong> <span id="summary-temp">N/A</span> °C</p>
+            <p><strong>Humidity:</strong> <span id="summary-humidity">N/A</span> %</p>
+            <canvas id="rainfall-chart"></canvas>
+        </div>
+
+        <div id="crop-list-container" style="display: none;">
+            <h3>Suggested Crops:</h3>
+            <ul id="Crops"></ul>
+            <div id="pagination"></div>
+            <canvas id="crop-chart"></canvas>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 Smart Farming | All rights reserved.</p>
+    </footer>
+
+    <script>
+
+        function showClimateData() {
+            // Hide crop list container and show data summary
+            document.getElementById("crop-list-container").style.display = "none";
+            document.getElementById("data-summary").style.display = "block";
+
+            const state = sessionStorage.getItem("state")?.trim().toUpperCase();
+            const district = sessionStorage.getItem("district")?.trim().toUpperCase();
+
+            if (!state || !district) {
+                alert("Please select both state and district first.");
+                return;
+            }
+
+            // Load rainfall data
+            fetch("district_wise_rainfall_normal_fixed.csv")
+                .then(res => {
+                    if (!res.ok) throw new Error("Failed to load rainfall CSV file");
+                    return res.text();
+                })
+                .then(csvText => {
+                    const rows = csvText.trim().split("\n");
+                    const headers = rows[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
+
+                    const data = rows.slice(1).map(line => {
+                        const values = line.split(",").map(v => v.trim().replace(/^"|"$/g, ""));
+                        const entry = {};
+                        headers.forEach((h, i) => entry[h] = values[i]);
+                        return entry;
+                    });
+
+                    // Find rainfall matching row
+                    const rainfallRow = data.find(row =>
+                        row["State"]?.trim().toUpperCase() === state ||
+                        row["STATE_UT_NAME"]?.trim().toUpperCase() === state
+                    );
+
+                    // Find district row inside rainfall data (some datasets have district as well)
+                    // Adjust keys if needed:
+                    let rainfallMatch;
+                    if (rainfallRow) {
+                        rainfallMatch = data.find(row =>
+                            (row["State"]?.trim().toUpperCase() === state || row["STATE_UT_NAME"]?.trim().toUpperCase() === state) &&
+                            row["District"]?.trim().toUpperCase() === district
+                        );
+                    }
+
+                    // Use rainfallMatch if available, else fallback to rainfallRow
+                    const rainfallDataRow = rainfallMatch || rainfallRow;
+
+                    if (!rainfallDataRow) {
+                        alert(`Rainfall data not found for ${district}, ${state}`);
+                        return;
+                    }
+
+                    // Extract yearly rainfall values (assuming months columns)
+                    const monthHeaders = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+                    const rainfallValues = monthHeaders.map(m => parseFloat(rainfallDataRow[m]) || 0);
+
+                    // Show rainfall chart
+                    const ctxRain = document.getElementById("rainfall-chart").getContext("2d");
+                    if (window.rainChart) window.rainChart.destroy();
+                    window.rainChart = new Chart(ctxRain, {
+                        type: "bar",
+                        data: {
+                            labels: monthHeaders,
+                            datasets: [{
+                                label: `Monthly Rainfall in ${district}`,
+                                data: rainfallValues,
+                                backgroundColor: "rgba(54, 162, 235, 0.5)",
+                                borderColor: "rgba(54, 162, 235, 1)",
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: "Rainfall (mm)"
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Load weather data next
+                    return fetch("weather-1.csv");
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error("Failed to load weather CSV file");
+                    return res.text();
+                })
+                .then(csvText => {
+                    const rows = csvText.trim().split("\n");
+                    const headers = rows[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
+
+                    const data = rows.slice(1).map(line => {
+                        const values = line.split(",").map(v => v.trim().replace(/^"|"$/g, ""));
+                        const entry = {};
+                        headers.forEach((h, i) => entry[h] = values[i]);
+                        return entry;
+                    });
+
+                    // Find matching weather row by state and district
+                    // const weatherRow = data.find(row =>
+                    //   row["state"]?.trim().toUpperCase() === state &&
+                    //   row["district"]?.trim().toUpperCase() === district
+                    // );
+
+                    // // If not found, try uppercase keys
+                    // const weatherData = weatherRow || data.find(row =>
+                    //   row["State"]?.trim().toUpperCase() === state &&
+                    //   row["District"]?.trim().toUpperCase() === district
+                    // );
+                    const weatherData = data.find(row =>
+                        row["state"]?.trim().toUpperCase() === state.trim().toUpperCase() &&
+                        row["District"]?.trim().toUpperCase() === district.trim().toUpperCase()
+                    );
+
+                    if (weatherData) {
+                        console.log("Temperature (°C):", weatherData["Temperature (°C)"]);
+                    } else {
+                        console.log("No matching weather data found for", state, district);
+                    }
+
+
+                    // Update UI with weather data or N/A
+                    document.getElementById("summary-state").textContent = state;
+                    document.getElementById("summary-district").textContent = district;
+                    document.getElementById("summary-temp").textContent = weatherData ? (weatherData["Temperature (°C)"] || weatherData[" temperature (°C)"] || "N/A") : "N/A";
+                    document.getElementById("summary-humidity").textContent = weatherData ? (weatherData["Humidity (%)"] || weatherData[" humidity (%)"] || "N/A") : "N/A";
+                    console.log("Parsed Data:", data);
+                    console.log("Parsed Data:", weatherData);
+                    console.log("Parsed Data:", data["Temperature (°C)"]);
+                    console.log("Parsed Data Sample:", data[0]); // Check one row to see structure
+
+
+
+
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Unable to load climate data.");
+                });
+        }
+
+        let allCropsData = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        function showCropData() {
+            document.getElementById("crop-list-container").style.display = "block";
+            document.getElementById("data-summary").style.display = "none";
+
+            fetch("crop_yield.csv")
+                .then(response => {
+                    if (!response.ok) throw new Error("Network response was not ok");
+                    return response.text();
+                })
+                .then(csvText => {
+                    const lines = csvText.trim().split("\n");
+                    const headers = lines[0].split(",");
+
+                    allCropsData = lines.slice(1).map(line => {
+                        const values = line.split(",");
+                        const data = {};
+                        headers.forEach((header, i) => {
+                            data[header.trim()] = isNaN(values[i]) ? values[i].trim() : parseFloat(values[i]);
+                        });
+                        return data;
+                    }).reverse((a, b) => b.Production - a.Production); // Sort by Production
+
+                    currentPage = 1;
+                    displayCropsPage(currentPage);
+                })
+                .catch(error => {
+                    alert("Unable to load crop data from server.");
+                    console.error(error);
+                });
+        }
+
+        function displayCropsPage(page) {
+            const cropList = document.getElementById("Crops");
+            cropList.innerHTML = "";
+
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageData = allCropsData.slice(start, end);
+
+            const cropNames = [];
+            const cropProductions = [];
+
+            pageData.forEach(crop => {
+                const li = document.createElement("li");
+                li.textContent = `${crop.Crop}, Production: ${crop.Production} tonnes`;
+                cropList.appendChild(li);
+                cropNames.push(crop.Crop);
+                cropProductions.push(crop.Production);
+            });
+
+            renderPagination();
+
+            if (window.cropChart) window.cropChart.destroy();
+
+            const cropCtx = document.getElementById("crop-chart").getContext("2d");
+            window.cropChart = new Chart(cropCtx, {
+                type: "bar",
+                data: {
+                    labels: cropNames,
+                    datasets: [{
+                        label: "Production (tonnes)",
+                        data: cropProductions,
+                        backgroundColor: "rgba(255, 159, 64, 0.6)",
+                        borderColor: "#ff9800",
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+
+        function renderPagination() {
+            const pagination = document.getElementById("pagination");
+            pagination.innerHTML = "";
+
+            const totalPages = Math.ceil(allCropsData.length / itemsPerPage);
+
+            const maxVisible = 6;
+
+            for (let i = 1; i <= Math.min(maxVisible, totalPages); i++) {
+                addPageButton(i);
+            }
+
+            if (totalPages > maxVisible + 1) {
+                const dots = document.createElement("span");
+                dots.textContent = " ... ";
+                pagination.appendChild(dots);
+                addPageButton(totalPages);
+            } else if (totalPages === maxVisible + 1) {
+                addPageButton(totalPages);
+            }
+
+            function addPageButton(page) {
+                const btn = document.createElement("button");
+                btn.textContent = page;
+                btn.className = (page === currentPage) ? "active" : "";
+                btn.onclick = () => {
+                    currentPage = page;
+                    displayCropsPage(currentPage);
+                };
+                pagination.appendChild(btn);
+            }
+        }
+
+
+    </script>
+
+</body>
+
+</html>

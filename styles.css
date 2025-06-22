@@ -1,0 +1,171 @@
+/* body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+header {
+    background-color: #0073e6;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+h1 {
+    margin: 0;
+}
+
+.input-section, .graph-section, .summary-section {
+    margin: 20px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    color: #0073e6;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label, select, button {
+    margin: 10px 0;
+}
+
+button {
+    background-color: #0073e6;
+    color: white;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+button:hover {
+    background-color: #005bb5;
+}
+
+canvas {
+    max-width: 100%;
+    margin-top: 20px;
+}
+
+footer {
+    text-align: center;
+    padding: 10px;
+    background-color: #0073e6;
+    color: white;
+} */
+/* Body and Background */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-image: url('images/crop9.jpg'); /* Change this path as needed */
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed; /* This makes the background image fixed while scrolling */
+    color: rgb(16, 133, 183); /* Text color for contrast */
+}
+
+header {
+    /* background-color: rgba(0, 115, 230, 0.7); / */
+    color: rgb(238, 243, 246);
+    text-align: center;
+    padding: 20px;
+}
+
+h1 {
+    margin: 0;
+}
+
+.input-section {
+    margin: 20px;
+    padding: 20px;
+    background-color: transparent; /* Transparent background to show the image */
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    color: #ffffff;
+}
+
+/* Large Button to select State */
+.select-button {
+    background-color: rgba(0, 96, 230, 0.8);
+    color: white;
+    padding: 15px 30px;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    border-radius: 8px;
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+.select-button:hover {
+    background-color: #005bb5;
+}
+
+/* Dropdown styling for state options */
+.dropdown {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    padding: 10px;
+    max-width: 100%;
+    margin: 10px 0;
+    font-size: 18px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: none; /* Initially hidden */
+}
+
+.dropdown button {
+    background-color: #0073e6;
+    color: white;
+    padding: 12px;
+    width: 100%;
+    border: none;
+    font-size: 16px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.dropdown button:hover {
+    background-color: #005bb5;
+}
+
+/* Get Climate Data Button */
+.get-data-btn {
+    background-color: #0073e6;
+    color: white;
+    padding: 15px 30px;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    border-radius: 8px;
+    display: block;
+    width: 100%;
+    margin-top: 20px;
+    text-align: center;
+}
+
+.get-data-btn:hover {
+    background-color: #005bb5;
+}
+
+footer {
+    text-align: center;
+    padding: 10px;
+    background-color: rgba(0, 115, 230, 0.7);
+    color: white;
+}

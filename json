@@ -1,0 +1,16 @@
+{
+    "state": "Assam",
+    "district": "Guwahati",
+    "temperature": 27,
+    "humidity": 80,
+    "rainPrediction": "Moderate rain expected",
+    "crops": [
+        { "crops": "Tea", "yield": 4000 },
+        { "crops": "Rice", "yield": 2500 }
+    ],
+    "monthlyWeather": {
+        "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        "temperature": [20, 21, 24, 25, 27, 28, 30, 29, 26, 24, 22, 21],
+        "humidity": [70, 68, 65, 66, 70, 75, 80, 82, 78, 75, 72, 70]
+    }
+}
